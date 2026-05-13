@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal Boost — Deal Publisher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c26;
+    --border: #2a2a38;
+    --accent: #00e5a0;
+    --accent2: #7b5ea7;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --danger: #ff4d6d;
+    --warn: #ffb347;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 48px;
+  }
+
+  .logo-mark {
+    width: 42px;
+    height: 42px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--bg);
+    flex-shrink: 0;
+  }
+
+  .header-text h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -0.3px;
+  }
+
+  .header-text p {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Step indicators */
+  .steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 36px;
+  }
+
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    transition: all 0.3s;
+  }
+
+  .step.active .step-num {
+    border-color: var(--accent);
+    background: rgba(0,229,160,0.1);
+    color: var(--accent);
+  }
+
+  .step.done .step-num {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .step-label {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .step.active .step-label { color: var(--text); }
+  .step.done .step-label { color: var(--accent); }
+
+  .step-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    margin: 0 12px;
+    max-width: 60px;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::before {
+    content: '';
+    width: 3px;
+    height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* Inputs */
+  .input-group {
+    margin-bottom: 16px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  input, textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: vertical;
+  }
+
+  input:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,229,160,0.08);
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: var(--muted);
+    opacity: 0.6;
+  }
+
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+    width: 100%;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: #00ffb3;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0,229,160,0.25);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn-publish {
+    background: linear-gradient(135deg, #7b5ea7, #a78bfa);
+    color: white;
+    width: 100%;
+    font-size: 15px;
+    padding: 14px 28px;
+  }
+
+  .btn-publish:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 28px rgba(123,94,167,0.35);
+  }
+
+  .btn-publish:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .btn-row .btn-secondary { flex: 0 0 auto; }
+  .btn-row .btn-primary { flex: 1; }
+
+  /* Status / loading */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(0,229,160,0.06);
+    border: 1px solid rgba(0,229,160,0.2);
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+  }
+
+  .status-bar.error {
+    background: rgba(255,77,109,0.06);
+    border-color: rgba(255,77,109,0.2);
+    color: var(--danger);
+  }
+
+  .status-bar.warn {
+    background: rgba(255,179,71,0.06);
+    border-color: rgba(255,179,71,0.2);
+    color: var(--warn);
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(0,229,160,0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Preview */
+  .preview-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 520px;
+    overflow-y: auto;
+    position: relative;
+  }
+
+  .preview-box::-webkit-scrollbar { width: 6px; }
+  .preview-box::-webkit-scrollbar-track { background: transparent; }
+  .preview-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .preview-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+
+  .preview-subtitle {
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 20px;
+    font-size: 14px;
+  }
+
+  .preview-body {
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  .preview-body h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    margin: 20px 0 10px;
+    color: var(--accent);
+  }
+
+  .preview-body p { margin-bottom: 14px; }
+
+  .preview-body a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(0,229,160,0.3);
+  }
+
+  .preview-body strong { color: #fff; }
+
+  .preview-body em { color: var(--muted); font-size: 13px; }
+
+  /* Substack settings panel */
+  .settings-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .settings-toggle .chevron {
+    transition: transform 0.2s;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .settings-body {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.3s ease;
+  }
+
+  .settings-body.open {
+    max-height: 500px;
+  }
+
+  .settings-inner { padding-top: 20px; }
+
+  /* Hidden sections */
+  .section { display: none; }
+  .section.visible { display: block; }
+
+  /* Tag */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: rgba(0,229,160,0.1);
+    border: 1px solid rgba(0,229,160,0.25);
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    margin-left: 8px;
+  }
+
+  /* Cookie warning */
+  .cookie-note {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
+    font-family: 'DM Mono', monospace;
+    line-height: 1.6;
+  }
+
+  .cookie-note a { color: var(--accent); }
+
+  /* Published success */
+  .success-box {
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  .success-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  .success-box h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+
+  .success-box p {
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  .success-box a {
+    color: var(--accent);
+  }
+
+  /* Draft mode badge */
+  .draft-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: rgba(255,179,71,0.1);
+    border: 1px solid rgba(255,179,71,0.3);
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--warn);
+    margin-left: 10px;
+  }
+
+  .publish-options {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .publish-options .btn { flex: 1; }
+
+  .btn-draft {
+    background: rgba(255,179,71,0.1);
+    color: var(--warn);
+    border: 1px solid rgba(255,179,71,0.3);
+  }
+
+  .btn-draft:hover:not(:disabled) {
+    background: rgba(255,179,71,0.2);
+    transform: translateY(-1px);
+  }
+
+  .btn-draft:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Editable preview */
+  .preview-box[contenteditable="true"] {
+    outline: none;
+    border-color: rgba(0,229,160,0.3);
+  }
+
+  .edit-hint {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo-mark">SB</div>
+    <div class="header-text">
+      <h1>Signal Boost Publisher</h1>
+      <p>deal-writer.v1 // powered by claude</p>
+    </div>
+  </header>
+
+  <div class="steps" id="stepsBar">
+    <div class="step active" id="step1">
+      <div class="step-num">1</div>
+      <span class="step-label">Deal Input</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step" id="step2">
+      <div class="step-num">2</div>
+      <span class="step-label">Preview</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step" id="step3">
+      <div class="step-num">3</div>
+      <span class="step-label">Publish</span>
+    </div>
+  </div>
+
+  <!-- SECTION 1: Input -->
+  <div class="section visible" id="sec1">
+
+    <div class="card">
+      <div class="card-title">Deal Links</div>
+
+      <div class="input-group">
+        <label>Main Deal URL (affiliate link)</label>
+        <input type="url" id="dealUrl" placeholder="https://geni.us/..." />
+      </div>
+
+      <div class="input-group">
+        <label>Accessory URL (affiliate link)</label>
+        <input type="url" id="accessoryUrl" placeholder="https://geni.us/..." />
+      </div>
+
+      <div class="input-group">
+        <label>Extra context for Claude (optional)</label>
+        <textarea id="extraContext" rows="3" placeholder="e.g. It's a limited 48hr flash sale. The phone was just released last month. Competing with Galaxy S25..."></textarea>
+      </div>
+
+      <div id="inputStatus"></div>
+
+      <button class="btn btn-primary" id="generateBtn" onclick="generatePost()">
+        ✦ Generate Post
+      </button>
+    </div>
+
+    <!-- Substack Settings -->
+    <div class="card">
+      <div class="settings-toggle" onclick="toggleSettings()">
+        <div class="card-title" style="margin-bottom:0">Substack Settings <span class="tag">Required to publish</span></div>
+        <span class="chevron" id="chevron">▼</span>
+      </div>
+      <div class="settings-body" id="settingsBody">
+        <div class="settings-inner">
+          <div class="input-row">
+            <div class="input-group">
+              <label>Publication URL</label>
+              <input type="text" id="pubUrl" placeholder="thesignalboost.substack.com" value="thesignalboost.substack.com" />
+            </div>
+            <div class="input-group">
+              <label>connect.sid Cookie <span class="tag">secret</span></label>
+              <input type="password" id="substackCookie" placeholder="s%3Axxxxxxxxxx..." />
+            </div>
+          </div>
+          <p class="cookie-note">
+            To get your cookie: Open Substack in Chrome → F12 → Application tab → Cookies → substack.com → copy the value of <strong style="color:var(--text)">connect.sid</strong>. This stays valid for months unless you log out. <a href="https://iam.slys.dev/p/substack-automation-with-n8n-how" target="_blank">More info ↗</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SECTION 2: Preview & Edit -->
+  <div class="section" id="sec2">
+
+    <div class="card">
+      <div class="card-title">Generated Post <span class="tag">editable</span></div>
+      <div id="previewRender"></div>
+      <p class="edit-hint">✎ Click any text above to edit before publishing</p>
+
+      <div class="publish-options">
+        <button class="btn btn-secondary" onclick="goBack()">← Regenerate</button>
+        <button class="btn btn-draft" id="draftBtn" onclick="publishPost(true)">Save as Draft</button>
+        <button class="btn btn-publish" id="publishBtn" onclick="publishPost(false)">⚡ Publish Now</button>
+      </div>
+
+      <div id="publishStatus" style="margin-top:14px"></div>
+    </div>
+
+  </div>
+
+  <!-- SECTION 3: Done -->
+  <div class="section" id="sec3">
+    <div class="card">
+      <div class="success-box">
+        <div class="success-icon">⚡</div>
+        <h2>Post Published!</h2>
+        <p id="publishedMsg">Your deal alert is live on Signal Boost.</p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <a id="postLink" href="#" target="_blank">
+            <button class="btn btn-secondary">View Post ↗</button>
+          </a>
+          <button class="btn btn-primary" onclick="startOver()" style="width:auto">Write Another Deal</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────
+let generatedPost = null; // { title, subtitle, body_html, body_text }
+let settingsOpen = false;
+
+// ─── UI helpers ───────────────────────────────────────────────
+function showSection(n) {
+  ['sec1','sec2','sec3'].forEach((id,i) => {
+    document.getElementById(id).classList.toggle('visible', i+1===n);
+  });
+  ['step1','step2','step3'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.className = 'step' + (i+1 < n ? ' done' : i+1===n ? ' active' : '');
+  });
+}
+
+function setStatus(containerId, msg, type='info') {
+  const el = document.getElementById(containerId);
+  if (!msg) { el.innerHTML=''; return; }
+  const cls = type==='error' ? 'error' : type==='warn' ? 'warn' : '';
+  const icon = type==='loading' ? '<div class="spinner"></div>' : type==='error' ? '✗' : type==='warn' ? '⚠' : '✓';
+  el.innerHTML = `<div class="status-bar ${cls}">${type==='loading'?'<div class="spinner"></div>':'<span>'+icon+'</span>'} <span>${msg}</span></div>`;
+}
+
+function toggleSettings() {
+  settingsOpen = !settingsOpen;
+  document.getElementById('settingsBody').classList.toggle('open', settingsOpen);
+  document.getElementById('chevron').textContent = settingsOpen ? '▲' : '▼';
+}
+
+function goBack() {
+  showSection(1);
+  generatedPost = null;
+}
+
+function startOver() {
+  generatedPost = null;
+  document.getElementById('dealUrl').value = '';
+  document.getElementById('accessoryUrl').value = '';
+  document.getElementById('extraContext').value = '';
+  setStatus('inputStatus', '');
+  setStatus('publishStatus', '');
+  showSection(1);
+}
+
+// ─── Claude API call ──────────────────────────────────────────
+async function callClaude(systemPrompt, userPrompt) {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1500,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }]
+    })
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(()=>({}));
+    throw new Error(err.error?.message || `API error ${response.status}`);
+  }
+  const data = await response.json();
+  return data.content.map(b => b.text||'').join('');
+}
+
+// ─── Fetch URL metadata via allorigins proxy ──────────────────
+async function fetchUrlInfo(url) {
+  try {
+    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxy, { signal: AbortSignal.timeout(10000) });
+    const json = await res.json();
+    const html = json.contents || '';
+    // Extract title
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    const ogTitleMatch = html.match(/property="og:title"\s+content="([^"]+)"/i) ||
+                         html.match(/content="([^"]+)"\s+property="og:title"/i);
+    const ogDescMatch = html.match(/property="og:description"\s+content="([^"]+)"/i) ||
+                        html.match(/content="([^"]+)"\s+property="og:description"/i);
+    const priceMatch = html.match(/\$[\d,]+\.?\d{0,2}/g);
+
+    return {
+      title: ogTitleMatch?.[1] || titleMatch?.[1] || url,
+      description: ogDescMatch?.[1] || '',
+      prices: priceMatch ? [...new Set(priceMatch)].slice(0,5) : [],
+      rawHtml: html.substring(0, 4000)
+    };
+  } catch(e) {
+    return { title: url, description: '', prices: [], rawHtml: '' };
+  }
+}
+
+// ─── Generate Post ────────────────────────────────────────────
+async function generatePost() {
+  const dealUrl = document.getElementById('dealUrl').value.trim();
+  const accessoryUrl = document.getElementById('accessoryUrl').value.trim();
+  const extraContext = document.getElementById('extraContext').value.trim();
+
+  if (!dealUrl) {
+    setStatus('inputStatus', 'Please enter a deal URL', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  setStatus('inputStatus', 'Fetching deal info...', 'loading');
+
+  try {
+    // Fetch metadata for both URLs
+    const [dealInfo, accessoryInfo] = await Promise.all([
+      fetchUrlInfo(dealUrl),
+      accessoryUrl ? fetchUrlInfo(accessoryUrl) : Promise.resolve(null)
+    ]);
+
+    setStatus('inputStatus', 'Claude is writing your post...', 'loading');
+
+    const systemPrompt = `You are the writer for Signal Boost, a Substack newsletter about smartphone deals. Your job is to write short, punchy deal alert posts that are opinionated, direct, and genuinely useful.
+
+Your writing style:
+- Conversational but knowledgeable — like a tech-savvy friend who hunts deals
+- Always explain WHY it's a good deal (context: historical price, comparison to competitors, value proposition)
+- Use bold text for key prices and product names
+- Honest: if there are caveats, mention them
+- Never hype something mediocre. Be real.
+- Short paragraphs, no filler
+
+You must respond ONLY with a valid JSON object — no preamble, no backticks, no explanation. The JSON must have exactly these keys:
+{
+  "title": "Headline (punchy, includes the discount, e.g. 'Samsung Galaxy S25 Hits Lowest Ever Price At $599')",
+  "subtitle": "One-line teaser (e.g. 'This is the deal we've been waiting for')",
+  "body": "The full post body in HTML. Use <h3> for section headings, <p> for paragraphs, <strong> for bold, and plain <a href='URL'> for links. Structure: intro paragraph explaining the deal context → price callout with link → verdict/why section under a <h3> → accessory section under a <h3> → affiliate disclaimer in <em> at the bottom."
+}`;
+
+    const userPrompt = `Write a Signal Boost deal post for this smartphone deal.
+
+MAIN DEAL:
+URL: ${dealUrl}
+Page title: ${dealInfo.title}
+Description: ${dealInfo.description}
+Prices found on page: ${dealInfo.prices.join(', ') || 'not detected'}
+${extraContext ? `\nExtra context from editor: ${extraContext}` : ''}
+
+${accessoryInfo ? `ACCESSORY DEAL:
+URL: ${accessoryUrl}
+Page title: ${accessoryInfo.title}
+Description: ${accessoryInfo.description}
+Prices found: ${accessoryInfo.prices.join(', ') || 'not detected'}` : 'ACCESSORY: No accessory link provided — suggest a relevant generic accessory (e.g. a case or charger) and note it as "find a good one here" with the accessory URL placeholder if none given.'}
+
+IMPORTANT FORMAT RULES:
+- The main deal link must appear as a bold affiliate link in the body
+- End the body with a "👉" CTA paragraph linking to the deal
+- Add an accessory section at the bottom with "Spend The Savings" as the h3 heading, featuring the accessory with its link
+- Final line must be: <em>Note: This post contains affiliate links. If you click a link and make a purchase, I may receive a small commission.</em>
+- Keep the whole post under 400 words`;
+
+    const raw = await callClaude(systemPrompt, userPrompt);
+
+    // Parse JSON
+    let cleaned = raw.replace(/```json|```/g, '').trim();
+    // Find JSON object
+    const jsonStart = cleaned.indexOf('{');
+    const jsonEnd = cleaned.lastIndexOf('}');
+    if (jsonStart === -1 || jsonEnd === -1) throw new Error('Claude did not return valid JSON');
+    cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+
+    generatedPost = JSON.parse(cleaned);
+
+    // Render preview
+    renderPreview();
+    setStatus('inputStatus', '');
+    showSection(2);
+
+  } catch(e) {
+    console.error(e);
+    setStatus('inputStatus', `Error: ${e.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ─── Render Preview ───────────────────────────────────────────
+function renderPreview() {
+  const container = document.getElementById('previewRender');
+  container.innerHTML = `
+    <div class="preview-box" contenteditable="true" id="editablePreview">
+      <div class="preview-title">${escHtml(generatedPost.title)}</div>
+      <div class="preview-subtitle">${escHtml(generatedPost.subtitle)}</div>
+      <div class="preview-body">${generatedPost.body}</div>
+    </div>
+  `;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Publish to Substack ──────────────────────────────────────
+async function publishPost(asDraft) {
+  const cookie = document.getElementById('substackCookie').value.trim();
+  const pubUrl = document.getElementById('pubUrl').value.trim().replace(/^https?:\/\//,'').replace(/\/$/,'');
+
+  if (!cookie) {
+    setStatus('publishStatus', 'Enter your Substack connect.sid cookie in settings above', 'error');
+    toggleSettings();
+    return;
+  }
+
+  if (!pubUrl) {
+    setStatus('publishStatus', 'Enter your publication URL in settings above', 'error');
+    toggleSettings();
+    return;
+  }
+
+  // Grab potentially edited content from the DOM
+  const previewEl = document.getElementById('editablePreview');
+  const titleEl = previewEl.querySelector('.preview-title');
+  const subtitleEl = previewEl.querySelector('.preview-subtitle');
+  const bodyEl = previewEl.querySelector('.preview-body');
+
+  const title = titleEl ? titleEl.innerText.trim() : generatedPost.title;
+  const subtitle = subtitleEl ? subtitleEl.innerText.trim() : generatedPost.subtitle;
+  const bodyHtml = bodyEl ? bodyEl.innerHTML : generatedPost.body;
+
+  const draftBtn = document.getElementById('draftBtn');
+  const publishBtn = document.getElementById('publishBtn');
+  draftBtn.disabled = true;
+  publishBtn.disabled = true;
+
+  setStatus('publishStatus', asDraft ? 'Saving draft to Substack...' : 'Publishing to Substack...', 'loading');
+
+  try {
+    // Substack internal API — create draft
+    const subdomain = pubUrl.replace('.substack.com', '');
+    const apiBase = `https://${pubUrl}/api/v1`;
+
+    // Step 1: Create the draft post
+    const postPayload = {
+      draft_title: title,
+      draft_subtitle: subtitle,
+      draft_body: JSON.stringify(htmlToSubstackDoc(bodyHtml)),
+      draft_section_id: null,
+      draft_podcast_url: '',
+      draft_podcast_preview_upload_id: null,
+      draft_video_upload_id: null,
+      draft_cover_image: null,
+      draft_cover_image_is_explicit: false,
+      audience: 'everyone',
+      draft_podcast_duration: null,
+      draft_podcast_mime_type: '',
+      draft_podcast_preview_start_time: null,
+      section_chosen: false,
+      type: 'newsletter'
+    };
+
+    const createRes = await fetch(`${apiBase}/posts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': `connect.sid=${cookie}`,
+        'Origin': `https://${pubUrl}`,
+        'Referer': `https://${pubUrl}/publish/post`,
+      },
+      credentials: 'include',
+      body: JSON.stringify(postPayload)
+    });
+
+    if (!createRes.ok) {
+      const errData = await createRes.json().catch(()=>({}));
+      // If CORS blocks us, fall back to clipboard copy
+      throw new Error(errData.error || `Substack API returned ${createRes.status}`);
+    }
+
+    const postData = await createRes.json();
+    const postId = postData.id;
+
+    if (!asDraft) {
+      // Step 2: Publish
+      const sendRes = await fetch(`${apiBase}/posts/${postId}/publish`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': `connect.sid=${cookie}`,
+          'Origin': `https://${pubUrl}`,
+          'Referer': `https://${pubUrl}/publish/post`,
+        },
+        credentials: 'include',
+        body: JSON.stringify({ send: true, share_automatically: false })
+      });
+      if (!sendRes.ok) {
+        const err2 = await sendRes.json().catch(()=>({}));
+        throw new Error(err2.error || `Publish step failed: ${sendRes.status}`);
+      }
+    }
+
+    const postUrl = `https://${pubUrl}/p/${postData.slug || postId}`;
+    document.getElementById('postLink').href = postUrl;
+    document.getElementById('publishedMsg').textContent = asDraft
+      ? 'Your draft is saved in Substack — go review and send it.'
+      : 'Your deal alert is live on Signal Boost.';
+
+    showSection(3);
+
+  } catch(e) {
+    console.error(e);
+    // CORS likely blocked the direct API call — offer clipboard fallback
+    if (e.message.includes('Failed to fetch') || e.message.includes('CORS') || e.message.includes('NetworkError')) {
+      await handleCORSFallback(title, subtitle, bodyHtml, asDraft);
+    } else {
+      setStatus('publishStatus', `Error: ${e.message}`, 'error');
+    }
+  } finally {
+    draftBtn.disabled = false;
+    publishBtn.disabled = false;
+  }
+}
+
+// ─── CORS Fallback: copy to clipboard + open Substack ─────────
+async function handleCORSFallback(title, subtitle, bodyHtml, asDraft) {
+  // Build a clean plain-text/HTML version to paste into Substack
+  const fullContent = `${title}\n\n${subtitle}\n\n${htmlToText(bodyHtml)}`;
+
+  try {
+    await navigator.clipboard.writeText(fullContent);
+    setStatus('publishStatus',
+      `⚠ Direct API was blocked by the browser's CORS policy (this is normal when running locally). Your post has been copied to your clipboard. <a href="https://${document.getElementById('pubUrl').value.trim()}/publish/post" target="_blank" style="color:var(--accent)">Open Substack editor ↗</a> and paste it in.`,
+      'warn'
+    );
+  } catch(e2) {
+    setStatus('publishStatus',
+      `Direct publish was blocked by CORS. <a href="https://${document.getElementById('pubUrl').value.trim()}/publish/post" target="_blank" style="color:var(--accent)">Open Substack editor ↗</a> and copy your post manually from the preview above.`,
+      'warn'
+    );
+  }
+}
+
+// ─── Convert HTML to Substack's Prosemirror doc format ─────────
+function htmlToSubstackDoc(html) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
+  const nodes = [];
+
+  function processNode(el) {
+    const tag = el.tagName?.toLowerCase();
+    if (!tag) {
+      // Text node
+      return;
+    }
+
+    if (tag === 'p' || tag === 'div') {
+      const content = getInlineContent(el);
+      if (content.length > 0) {
+        nodes.push({ type: 'paragraph', content });
+      }
+    } else if (tag === 'h3' || tag === 'h2') {
+      nodes.push({
+        type: 'heading',
+        attrs: { level: 3 },
+        content: [{ type: 'text', text: el.textContent.trim() }]
+      });
+    } else if (tag === 'em' || tag === 'i') {
+      const content = getInlineContent(el);
+      nodes.push({ type: 'paragraph', content });
+    }
+  }
+
+  function getInlineContent(el) {
+    const result = [];
+    el.childNodes.forEach(node => {
+      if (node.nodeType === 3) { // text
+        const text = node.textContent;
+        if (text) result.push({ type: 'text', text });
+      } else if (node.nodeType === 1) {
+        const t = node.tagName.toLowerCase();
+        const text = node.textContent;
+        if (!text) return;
+        if (t === 'strong' || t === 'b') {
+          result.push({ type: 'text', text, marks: [{ type: 'bold' }] });
+        } else if (t === 'em' || t === 'i') {
+          result.push({ type: 'text', text, marks: [{ type: 'italic' }] });
+        } else if (t === 'a') {
+          const href = node.getAttribute('href') || '';
+          result.push({ type: 'text', text, marks: [{ type: 'link', attrs: { href } }] });
+        } else {
+          result.push({ type: 'text', text });
+        }
+      }
+    });
+    return result;
+  }
+
+  const root = doc.querySelector('div');
+  if (root) {
+    root.childNodes.forEach(child => {
+      if (child.nodeType === 1) processNode(child);
+    });
+  }
+
+  return {
+    type: 'doc',
+    content: nodes.length > 0 ? nodes : [{ type: 'paragraph', content: [{ type: 'text', text: '' }] }]
+  };
+}
+
+function htmlToText(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.innerText;
+}
+
+// Open settings on load if cookie not set
+window.addEventListener('load', () => {
+  toggleSettings();
+});
+</script>
+</body>
+</html>
