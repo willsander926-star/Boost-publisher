@@ -499,18 +499,7 @@
 
   .publish-options .btn { flex: 1; }
 
-  .btn-draft {
-    background: rgba(255,179,71,0.1);
-    color: var(--warn);
-    border: 1px solid rgba(255,179,71,0.3);
-  }
 
-  .btn-draft:hover:not(:disabled) {
-    background: rgba(255,179,71,0.2);
-    transform: translateY(-1px);
-  }
-
-  .btn-draft:disabled { opacity: 0.4; cursor: not-allowed; }
 
   /* Editable preview */
   .preview-box[contenteditable="true"] {
@@ -582,30 +571,7 @@
       </button>
     </div>
 
-    <!-- Substack Settings -->
-    <div class="card">
-      <div class="settings-toggle" onclick="toggleSettings()">
-        <div class="card-title" style="margin-bottom:0">Substack Settings <span class="tag">Required to publish</span></div>
-        <span class="chevron" id="chevron">▼</span>
-      </div>
-      <div class="settings-body" id="settingsBody">
-        <div class="settings-inner">
-          <div class="input-row">
-            <div class="input-group">
-              <label>Publication URL</label>
-              <input type="text" id="pubUrl" placeholder="thesignalboost.substack.com" value="thesignalboost.substack.com" />
-            </div>
-            <div class="input-group">
-              <label>connect.sid Cookie <span class="tag">secret</span></label>
-              <input type="password" id="substackCookie" placeholder="s%3Axxxxxxxxxx..." />
-            </div>
-          </div>
-          <p class="cookie-note">
-            To get your cookie: Open Substack in Chrome → F12 → Application tab → Cookies → substack.com → copy the value of <strong style="color:var(--text)">connect.sid</strong>. This stays valid for months unless you log out. <a href="https://iam.slys.dev/p/substack-automation-with-n8n-how" target="_blank">More info ↗</a>
-          </p>
-        </div>
-      </div>
-    </div>
+
 
   </div>
 
@@ -619,8 +585,7 @@
 
       <div class="publish-options">
         <button class="btn btn-secondary" onclick="goBack()">← Regenerate</button>
-        <button class="btn btn-draft" id="draftBtn" onclick="publishPost(true)">Save as Draft</button>
-        <button class="btn btn-publish" id="publishBtn" onclick="publishPost(false)">⚡ Publish Now</button>
+        <button class="btn btn-publish" id="publishBtn" onclick="copyAndOpen()">⚡ Copy & Open Substack</button>
       </div>
 
       <div id="publishStatus" style="margin-top:14px"></div>
@@ -632,14 +597,14 @@
   <div class="section" id="sec3">
     <div class="card">
       <div class="success-box">
-        <div class="success-icon">⚡</div>
-        <h2>Post Published!</h2>
-        <p id="publishedMsg">Your deal alert is live on Signal Boost.</p>
+        <div class="success-icon">📋</div>
+        <h2>Copied & Ready!</h2>
+        <p id="publishedMsg">Your post is copied to clipboard. Paste it into the Substack editor and hit send.</p>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-          <a id="postLink" href="#" target="_blank">
-            <button class="btn btn-secondary">View Post ↗</button>
+          <a href="https://thesignalboost.substack.com/publish/post" target="_blank">
+            <button class="btn btn-publish" style="width:auto">Open Substack Editor ↗</button>
           </a>
-          <button class="btn btn-primary" onclick="startOver()" style="width:auto">Write Another Deal</button>
+          <button class="btn btn-secondary" onclick="startOver()">Write Another Deal</button>
         </div>
       </div>
     </div>
@@ -671,11 +636,7 @@ function setStatus(containerId, msg, type='info') {
   el.innerHTML = `<div class="status-bar ${cls}">${type==='loading'?'<div class="spinner"></div>':'<span>'+icon+'</span>'} <span>${msg}</span></div>`;
 }
 
-function toggleSettings() {
-  settingsOpen = !settingsOpen;
-  document.getElementById('settingsBody').classList.toggle('open', settingsOpen);
-  document.getElementById('chevron').textContent = settingsOpen ? '▲' : '▼';
-}
+function toggleSettings() {}
 
 function goBack() {
   showSection(1);
@@ -690,6 +651,37 @@ function startOver() {
   setStatus('inputStatus', '');
   setStatus('publishStatus', '');
   showSection(1);
+}
+
+// ─── Copy & Open Substack ─────────────────────────────────────
+async function copyAndOpen() {
+  const previewEl = document.getElementById('editablePreview');
+  const titleEl = previewEl.querySelector('.preview-title');
+  const subtitleEl = previewEl.querySelector('.preview-subtitle');
+  const bodyEl = previewEl.querySelector('.preview-body');
+
+  const title = titleEl ? titleEl.innerText.trim() : generatedPost.title;
+  const subtitle = subtitleEl ? subtitleEl.innerText.trim() : generatedPost.subtitle;
+  const bodyText = bodyEl ? bodyEl.innerText : '';
+
+  const fullText = `${title}\n\n${subtitle}\n\n${bodyText}`;
+
+  const btn = document.getElementById('publishBtn');
+  btn.disabled = true;
+
+  try {
+    await navigator.clipboard.writeText(fullText);
+    showSection(3);
+    // Open Substack editor in new tab
+    window.open('https://thesignalboost.substack.com/publish/post', '_blank');
+  } catch(e) {
+    setStatus('publishStatus',
+      '⚠ Could not auto-copy — please manually select and copy the post above, then <a href="https://thesignalboost.substack.com/publish/post" target="_blank" style="color:var(--accent)">open Substack ↗</a>',
+      'warn'
+    );
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ─── Claude API call ──────────────────────────────────────────
@@ -842,212 +834,6 @@ function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// ─── Publish to Substack ──────────────────────────────────────
-async function publishPost(asDraft) {
-  const cookie = document.getElementById('substackCookie').value.trim();
-  const pubUrl = document.getElementById('pubUrl').value.trim().replace(/^https?:\/\//,'').replace(/\/$/,'');
-
-  if (!cookie) {
-    setStatus('publishStatus', 'Enter your Substack connect.sid cookie in settings above', 'error');
-    toggleSettings();
-    return;
-  }
-
-  if (!pubUrl) {
-    setStatus('publishStatus', 'Enter your publication URL in settings above', 'error');
-    toggleSettings();
-    return;
-  }
-
-  // Grab potentially edited content from the DOM
-  const previewEl = document.getElementById('editablePreview');
-  const titleEl = previewEl.querySelector('.preview-title');
-  const subtitleEl = previewEl.querySelector('.preview-subtitle');
-  const bodyEl = previewEl.querySelector('.preview-body');
-
-  const title = titleEl ? titleEl.innerText.trim() : generatedPost.title;
-  const subtitle = subtitleEl ? subtitleEl.innerText.trim() : generatedPost.subtitle;
-  const bodyHtml = bodyEl ? bodyEl.innerHTML : generatedPost.body;
-
-  const draftBtn = document.getElementById('draftBtn');
-  const publishBtn = document.getElementById('publishBtn');
-  draftBtn.disabled = true;
-  publishBtn.disabled = true;
-
-  setStatus('publishStatus', asDraft ? 'Saving draft to Substack...' : 'Publishing to Substack...', 'loading');
-
-  try {
-    // Substack internal API — create draft
-    const subdomain = pubUrl.replace('.substack.com', '');
-    const apiBase = `https://${pubUrl}/api/v1`;
-
-    // Step 1: Create the draft post
-    const postPayload = {
-      draft_title: title,
-      draft_subtitle: subtitle,
-      draft_body: JSON.stringify(htmlToSubstackDoc(bodyHtml)),
-      draft_section_id: null,
-      draft_podcast_url: '',
-      draft_podcast_preview_upload_id: null,
-      draft_video_upload_id: null,
-      draft_cover_image: null,
-      draft_cover_image_is_explicit: false,
-      audience: 'everyone',
-      draft_podcast_duration: null,
-      draft_podcast_mime_type: '',
-      draft_podcast_preview_start_time: null,
-      section_chosen: false,
-      type: 'newsletter'
-    };
-
-    const createRes = await fetch(`${apiBase}/posts`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': `connect.sid=${cookie}`,
-        'Origin': `https://${pubUrl}`,
-        'Referer': `https://${pubUrl}/publish/post`,
-      },
-      credentials: 'include',
-      body: JSON.stringify(postPayload)
-    });
-
-    if (!createRes.ok) {
-      const errData = await createRes.json().catch(()=>({}));
-      // If CORS blocks us, fall back to clipboard copy
-      throw new Error(errData.error || `Substack API returned ${createRes.status}`);
-    }
-
-    const postData = await createRes.json();
-    const postId = postData.id;
-
-    if (!asDraft) {
-      // Step 2: Publish
-      const sendRes = await fetch(`${apiBase}/posts/${postId}/publish`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cookie': `connect.sid=${cookie}`,
-          'Origin': `https://${pubUrl}`,
-          'Referer': `https://${pubUrl}/publish/post`,
-        },
-        credentials: 'include',
-        body: JSON.stringify({ send: true, share_automatically: false })
-      });
-      if (!sendRes.ok) {
-        const err2 = await sendRes.json().catch(()=>({}));
-        throw new Error(err2.error || `Publish step failed: ${sendRes.status}`);
-      }
-    }
-
-    const postUrl = `https://${pubUrl}/p/${postData.slug || postId}`;
-    document.getElementById('postLink').href = postUrl;
-    document.getElementById('publishedMsg').textContent = asDraft
-      ? 'Your draft is saved in Substack — go review and send it.'
-      : 'Your deal alert is live on Signal Boost.';
-
-    showSection(3);
-
-  } catch(e) {
-    console.error(e);
-    // CORS likely blocked the direct API call — offer clipboard fallback
-    if (e.message.includes('Failed to fetch') || e.message.includes('CORS') || e.message.includes('NetworkError')) {
-      await handleCORSFallback(title, subtitle, bodyHtml, asDraft);
-    } else {
-      setStatus('publishStatus', `Error: ${e.message}`, 'error');
-    }
-  } finally {
-    draftBtn.disabled = false;
-    publishBtn.disabled = false;
-  }
-}
-
-// ─── CORS Fallback: copy to clipboard + open Substack ─────────
-async function handleCORSFallback(title, subtitle, bodyHtml, asDraft) {
-  // Build a clean plain-text/HTML version to paste into Substack
-  const fullContent = `${title}\n\n${subtitle}\n\n${htmlToText(bodyHtml)}`;
-
-  try {
-    await navigator.clipboard.writeText(fullContent);
-    setStatus('publishStatus',
-      `⚠ Direct API was blocked by the browser's CORS policy (this is normal when running locally). Your post has been copied to your clipboard. <a href="https://${document.getElementById('pubUrl').value.trim()}/publish/post" target="_blank" style="color:var(--accent)">Open Substack editor ↗</a> and paste it in.`,
-      'warn'
-    );
-  } catch(e2) {
-    setStatus('publishStatus',
-      `Direct publish was blocked by CORS. <a href="https://${document.getElementById('pubUrl').value.trim()}/publish/post" target="_blank" style="color:var(--accent)">Open Substack editor ↗</a> and copy your post manually from the preview above.`,
-      'warn'
-    );
-  }
-}
-
-// ─── Convert HTML to Substack's Prosemirror doc format ─────────
-function htmlToSubstackDoc(html) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
-  const nodes = [];
-
-  function processNode(el) {
-    const tag = el.tagName?.toLowerCase();
-    if (!tag) {
-      // Text node
-      return;
-    }
-
-    if (tag === 'p' || tag === 'div') {
-      const content = getInlineContent(el);
-      if (content.length > 0) {
-        nodes.push({ type: 'paragraph', content });
-      }
-    } else if (tag === 'h3' || tag === 'h2') {
-      nodes.push({
-        type: 'heading',
-        attrs: { level: 3 },
-        content: [{ type: 'text', text: el.textContent.trim() }]
-      });
-    } else if (tag === 'em' || tag === 'i') {
-      const content = getInlineContent(el);
-      nodes.push({ type: 'paragraph', content });
-    }
-  }
-
-  function getInlineContent(el) {
-    const result = [];
-    el.childNodes.forEach(node => {
-      if (node.nodeType === 3) { // text
-        const text = node.textContent;
-        if (text) result.push({ type: 'text', text });
-      } else if (node.nodeType === 1) {
-        const t = node.tagName.toLowerCase();
-        const text = node.textContent;
-        if (!text) return;
-        if (t === 'strong' || t === 'b') {
-          result.push({ type: 'text', text, marks: [{ type: 'bold' }] });
-        } else if (t === 'em' || t === 'i') {
-          result.push({ type: 'text', text, marks: [{ type: 'italic' }] });
-        } else if (t === 'a') {
-          const href = node.getAttribute('href') || '';
-          result.push({ type: 'text', text, marks: [{ type: 'link', attrs: { href } }] });
-        } else {
-          result.push({ type: 'text', text });
-        }
-      }
-    });
-    return result;
-  }
-
-  const root = doc.querySelector('div');
-  if (root) {
-    root.childNodes.forEach(child => {
-      if (child.nodeType === 1) processNode(child);
-    });
-  }
-
-  return {
-    type: 'doc',
-    content: nodes.length > 0 ? nodes : [{ type: 'paragraph', content: [{ type: 'text', text: '' }] }]
-  };
-}
 
 function htmlToText(html) {
   const tmp = document.createElement('div');
@@ -1055,10 +841,8 @@ function htmlToText(html) {
   return tmp.innerText;
 }
 
-// Open settings on load if cookie not set
-window.addEventListener('load', () => {
-  toggleSettings();
-});
+// No settings to open on load
+window.addEventListener('load', () => {});
 </script>
 </body>
 </html>
